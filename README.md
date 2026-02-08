@@ -109,6 +109,16 @@ curl http://localhost:18443/v1/images/generations \
   -d '{"model":"gpt-image-1","prompt":"Minimal logo","size":"1024x1024"}'
 ```
 
+### Images (Edits)
+
+```bash
+curl http://localhost:18443/v1/images/edits \
+  -H "X-API-Key: change-me" \
+  -F image=@input.png \
+  -F prompt="Add a blue background" \
+  -F model=gpt-image-1
+```
+
 ### Audio (Transcriptions)
 
 ```bash
@@ -127,10 +137,68 @@ curl http://localhost:18443/v1/audio/translations \
   -F model=whisper-1
 ```
 
+### Audio (Speech)
+
+```bash
+curl http://localhost:18443/v1/audio/speech \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: change-me" \
+  -d '{"model":"gpt-4o-mini-tts","voice":"alloy","format":"mp3","input":"Hello"}' \
+  --output speech.mp3
+```
+
+## SDK Examples
+
+### Python
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://localhost:18443/v1",
+    api_key="unused",
+    default_headers={"X-API-Key": "change-me"},
+)
+
+resp = client.responses.create(
+    model="gpt-4.1-mini",
+    input="Hello",
+)
+
+print(resp.output_text)
+```
+
+### Node.js
+
+```js
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "http://localhost:18443/v1",
+  apiKey: "unused",
+  defaultHeaders: { "X-API-Key": "change-me" },
+});
+
+const resp = await client.responses.create({
+  model: "gpt-4.1-mini",
+  input: "Hello",
+});
+
+console.log(resp.output_text);
+```
+
 ## Error Behavior
 
 - If `X-API-Key` is missing or invalid, the proxy returns `401` with `{ "error": "unauthorized" }`.
 - All upstream OpenAI errors are returned as-is (status code and body).
+
+## Troubleshooting
+
+- `401 unauthorized`: missing or wrong `X-API-Key`.
+- `404 Not found`: endpoint not in the supported list or missing `/v1` in the URL.
+- `Invalid file format`: audio must be `flac/m4a/mp3/mp4/mpeg/mpga/oga/ogg/wav/webm`.
+- Image errors: `gpt-image-1` supports sizes `1024x1024`, `1024x1536`, `1536x1024`, or `auto`.
+- Streaming seems stuck: ensure your client uses `stream: true` and does not buffer SSE.
 
 ## Notes
 
